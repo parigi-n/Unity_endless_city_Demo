@@ -63,7 +63,7 @@ public class ChunkManager : MonoBehaviour {
     Transform cameraPosition;
 
     Dictionary<Vector2di, GameObject> chunkMap;
-    HashSet<Vector2di> chunkView;
+    List<Vector2di> chunkView;
     Vector2di viewPosition = null;
 
     // Use this for initialization
@@ -74,7 +74,7 @@ public class ChunkManager : MonoBehaviour {
         cameraPosition = GameObject.Find("Main Camera").transform;
 
         buildingList = Resources.LoadAll<GameObject>("TestBuilding");
-        this.chunkView = new HashSet<Vector2di>();
+        this.chunkView = new List<Vector2di>();
         /*while (xIndex < mapXSize)
         {
             while (yIndex < mapYSize)
@@ -93,33 +93,37 @@ public class ChunkManager : MonoBehaviour {
 
     void updateChunkView()
     {
-        List<Vector2di> newChunksToActivate;
-        HashSet<Vector2di> newChunkView;
-        List<Vector2di> chunksNoLongerInView;
+        List<Vector2di> newChunkView;
         Vector2di newViewPosition;
 
         newViewPosition = get2DPositionFrom3d(this.cameraPosition.position);
         if (viewPosition == null || viewPosition.x != newViewPosition.x || viewPosition.y != newViewPosition.y)
         {
-            print("new position");
             viewPosition = newViewPosition;
             newChunkView = getChunkRadius(viewPosition);
 
-            foreach (Vector2di chunkPosition in this.chunkView.Except(newChunkView))
-            {
-                chunkMap[chunkPosition].SetActive(false);
-            }
-
-            foreach (Vector2di chunkPosition in newChunkView.Except(this.chunkView).ToList())
+            foreach (Vector2di chunkPosition in newChunkView)
             {
                 if (chunkMap.ContainsKey(chunkPosition))
                 {
-                    chunkMap[chunkPosition].SetActive(true);
+                    if (chunkMap[chunkPosition].activeSelf == true)
+                    {
+                        this.chunkView.Remove(chunkPosition);
+                    }
+                    else
+                    {
+                        chunkMap[chunkPosition].SetActive(true);
+                    }
                 }
                 else
                 {
                     buildChunk(chunkPosition);
                 }
+            }
+
+            foreach (Vector2di chunkPosition in this.chunkView)
+            {
+                chunkMap[chunkPosition].SetActive(false);
             }
 
             this.chunkView = newChunkView;
@@ -138,11 +142,11 @@ public class ChunkManager : MonoBehaviour {
         newChunk.GetComponent<Chunk>().launchGeneration(this.buildingList, this.road, this.roadCrossway, this.groundPlane, blockXsize, blockYsize, scale, density);
     }
 
-    HashSet<Vector2di> getChunkRadius(Vector2di fromPosition)
+    List<Vector2di> getChunkRadius(Vector2di fromPosition)
     {
-        HashSet<Vector2di> newChunkInView = new HashSet<Vector2di>();
-
-        int radius = 11;
+        List<Vector2di> newChunkInView = new List<Vector2di>();
+        //373 305 249
+        int radius = 16;
 
         for (var zCircle = -radius; zCircle <= radius; zCircle++)
         {
